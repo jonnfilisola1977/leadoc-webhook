@@ -3,6 +3,7 @@ const app = express();
 app.use(express.json());
 
 const VERIFY_TOKEN = 'leadoc_industrial_2026';
+const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
 
 app.get('/webhook', (req, res) => {
   const mode = req.query['hub.mode'];
@@ -18,11 +19,14 @@ app.get('/webhook', (req, res) => {
 
 app.post('/webhook', (req, res) => {
   const body = req.body;
+  console.log('📩 Evento:', JSON.stringify(body, null, 2));
   if (body.object === 'whatsapp_business_account') {
     body.entry?.forEach(entry => {
       entry.changes?.forEach(change => {
         const msgs = change.value.messages;
-        if (msgs) msgs.forEach(msg => console.log(`📱 ${msg.from}: ${msg.text?.body}`));
+        if (msgs) msgs.forEach(msg => {
+          console.log(`📱 De: ${msg.from} | Texto: ${msg.text?.body}`);
+        });
       });
     });
     res.sendStatus(200);
@@ -31,7 +35,16 @@ app.post('/webhook', (req, res) => {
   }
 });
 
-app.get('/', (req, res) => res.json({ status: 'LEADOC Webhook activo', ts: new Date().toISOString() }));
+app.get('/status', (req, res) => res.json({
+  status: 'LEADOC Webhook activo',
+  token_cargado: !!WHATSAPP_TOKEN,
+  ts: new Date().toISOString()
+}));
+
+app.get('/', (req, res) => res.json({
+  status: 'LEADOC Webhook activo',
+  ts: new Date().toISOString()
+}));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Puerto ${PORT}`));
